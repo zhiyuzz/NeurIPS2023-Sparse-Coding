@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 from datetime import datetime
-from Static_algorithm import *
+from Algorithm_static_subroutine import *
 
 ##########
 # Read from the dataset
@@ -26,6 +26,16 @@ K_class = range(K_max)  # different number of harmonics
 G = 1   # Lipschitz constant
 T = 50000   # Length of the studied segment
 temperature_subset = temperature[:T]
+
+##########
+# Compute the loss of the oracle forecaster as the baseline
+##########
+
+predictions_oracle = np.zeros(T)
+loss_oracle = 0
+for t in range(T):
+    predictions_oracle[t] = temperature_subset[t - 1]
+    loss_oracle += np.abs(predictions_oracle[t] - temperature_subset[t])
 
 ##########
 # The loop over settings with different K
@@ -62,12 +72,12 @@ for ind_K in range(len(K_class)):
             ht[2 * k + 1] = np.cos((k + 1) * omega * time_diff.seconds)
             ht[2 * k + 2] = np.sin((k + 1) * omega * time_diff.seconds)
 
-        # Send Lipschitz constants to the static subroutines, and query their predictions
+        # Query predictions
         predictions_subroutines = np.zeros(2 * K + 1)
         for ind in range(2 * K + 1):
             predictions_subroutines[ind] = algs[ind].get_prediction() * ht[ind]
         if t > 0:
-            predictions[t] = np.sum(predictions_subroutines)
+            predictions[t] = np.sum(predictions_subroutines) + temperature_subset[t - 1]
 
         # Calculate the gradient
         loss += np.abs(predictions[t] - temperature_subset[t])
@@ -85,9 +95,11 @@ for ind_K in range(len(K_class)):
 plt.figure()
 plt.rcParams.update({'font.size': 14})
 plt.rcParams['lines.linewidth'] = 3
-plt.plot(np.arange(K_max, dtype=int) * 2 + 1, total_loss)
+x_axis = np.append(np.array([0]), np.arange(K_max, dtype=int) * 2 + 1)
+y_axis = np.append(np.array([loss_oracle]), total_loss)
+plt.plot(x_axis, y_axis)
 plt.xlabel('Number of features')
-plt.xticks(range(1, 2 * K_max, 2))
+plt.xticks(x_axis)
 plt.ylabel('Total loss')
 plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-plt.savefig("Figures/Dynamic_vanilla.pdf", bbox_inches='tight')
+plt.savefig("Figures/Dynamic_w_oracle.pdf", bbox_inches='tight')

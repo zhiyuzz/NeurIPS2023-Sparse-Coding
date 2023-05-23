@@ -1,5 +1,5 @@
-from Static_algorithm import *
-from Dynamic_baseline_algorithm import *
+from Algorithm_static_subroutine import *
+from Algorithm_baseline import *
 
 
 ##########
